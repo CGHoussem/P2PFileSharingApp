@@ -33,11 +33,6 @@ typedef struct {
 	int pid;
 } server_params;
 
-time_t current_time;
-pthread_t threads[2];
-server_params* server_p;
-guint signal_id;
-
 int add_IP(char*);
 int update_IPlist(char *);
 void startServer();
@@ -49,6 +44,10 @@ void destroy();
 void on_serverStateBtn_toggled();
 void on_refreshBtn_clicked();
 
+time_t current_time;
+pthread_t threads[2];
+server_params* server_p;
+guint signal_id;
 GtkWidget *window;
 GtkViewport *viewport;
 GtkScrolledWindow *scrolledwindow;
@@ -85,9 +84,7 @@ int main(int argc, char **argv)
 	exitBtn = GTK_BUTTON(gtk_builder_get_object(builder, "exitBtn"));
 
 	gtk_builder_connect_signals(builder, NULL);
-
 	g_object_unref(builder);
-
 	gtk_widget_show(window);
 	
 	// server params
@@ -101,23 +98,23 @@ int main(int argc, char **argv)
 	// Threads
 	pthread_create(&threads[0], NULL, guiThread, NULL);
 	pthread_create(&threads[1], NULL, serverThread, server_p);
-	
 	pthread_join(threads[0], NULL);
 	pthread_join(threads[1], NULL);
 	
+	printf("BYE\n");
+
 	return 0;
 }
 
 void destroy()
 {
-	// KILL SERVZER
+	// KILL SERVER
 	stopServer();
-	pthread_kill(threads[1], SIGKILL);
+	pthread_cancel(threads[1]);
 	free(server_p);
 	// KILL GUI
 	gtk_main_quit();
-	pthread_kill(threads[0], SIGKILL);
-	exit(0);
+	pthread_cancel(threads[0]);
 }
 void on_refreshBtn_clicked()
 {
@@ -130,7 +127,8 @@ void on_refreshBtn_clicked()
 		gtk_text_buffer_get_end_iter(buffer, &end_iter);
 		gtk_text_buffer_delete(buffer, &start_iter, &end_iter);
 
-		char c, ch[256] = "";
+		char c;
+		char *ch = (char*) malloc(sizeof(char) * 1235000);
 		while (1)
 		{
 			c = fgetc(logfile);
@@ -139,8 +137,8 @@ void on_refreshBtn_clicked()
 			append(ch, c);
 		}
 		fclose(logfile);
-
 		gtk_text_buffer_insert(buffer, &end_iter, ch, strlen(ch));
+		free(ch);
 	}
 }
 void on_serverStateBtn_toggled()
@@ -174,8 +172,10 @@ int add_IP(char *peer_ip)
 }
 void stopServer()
 {
+	printf("stopServer()\n");
 	close(server_p->new);
 	close(server_p->sock);
+	writeLog("Server disconnected");
 }
 void startServer()
 {
@@ -230,10 +230,11 @@ void *serverThread(void *args)
 	startServer();
 
 	// create log file
-	FILE *logfile = fopen("log.txt", "w");
-	fclose(logfile);
+	FILE *logfile = fopen("log.txt", "a");
+	if (logfile != NULL)
+		fclose(logfile);
 
-	writeLog("Server Started");
+	//writeLog("Server Started");
 	on_refreshBtn_clicked();
 
 	while(1)
@@ -288,17 +289,17 @@ void *serverThread(void *args)
 					if (filedet != NULL)
 					{
 						char fileslist[256];
-						while (1)
+						char c;
+						while ((c = fgetc(filedet)) != EOF)
 						{
-							char c = fgetc(filedet);
-							if (c != feof(filedet))
-								append(fileslist, c);
-							else 
-								break;
+							printf("%c", c);
+							append(fileslist, c);
 						}
 						printf("Files list (from server): %s\n", fileslist);
-						//send(vargp->new, fileslist, sizeof(fileslist), 0);
+						send(vargp->new, fileslist, sizeof(fileslist), 0);
 						printf("Files list has been sent to the client\n");
+					} else {
+						printf("File doesn't exist?");
 					}
 				}
 				//PUBLISH OPERATION
@@ -316,17 +317,19 @@ void *serverThread(void *args)
         			else
 					{
 						fwrite("\n", sizeof(char), 1, filedet);
-							
+						printf("before recv()\n");	
 						vargp->len=recv(vargp->new, vargp->file_name, MAX_BUFFER, 0);
+						printf("after recv()\n");	
 						fwrite(&vargp->file_name, vargp->len,1, filedet);
+						printf("afte fwrite\n");	
 						char Report[] = "File published"; 
 						send(vargp->new,Report,sizeof(Report),0);
 				
-						/*fwrite("\t",sizeof(char),1, filedet);
+						fwrite("\t",sizeof(char),1, filedet);
 						vargp->peer_ip = inet_ntoa(vargp->client.sin_addr);
 						// Adding peer IP address to given file
 						fwrite(vargp->peer_ip,1, strlen(vargp->peer_ip), filedet);
-						fclose(filedet);*/
+						fclose(filedet);
 
 						sprintf(msg, "%s has published %s", vargp->peer_ip, vargp->file_name);
 						writeLog(msg);
@@ -384,10 +387,10 @@ void *serverThread(void *args)
         			
 		    		printf("Search complete!!!!\n");
 					sprintf(msg, "Client disconnected from port no %d and IP %s\n\n", ntohs(vargp->client.sin_port), inet_ntoa(vargp->client.sin_addr));
+					writeLog(msg);
 		    		vargp->peer_ip = inet_ntoa(vargp->client.sin_addr);
 					update_IPlist(vargp->peer_ip);
 					close(vargp->new); // disconnect this client so that other users can connect server
-					writeLog(msg);
 					exit(0);
 				}
 				//TERMINATE OPERATION: When user want to disconnect from server

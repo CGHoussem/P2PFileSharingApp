@@ -1,3 +1,27 @@
-[28/01/19 16:51] Server Started
-[28/01/19 16:51] New client connected from port no 46716 and IP 127.0.0.1
-[28/01/19 16:51] 127.0.0.1 connected from the server
+[29/01/19 17:49] Server disconnected
+[29/01/19 17:49] Server disconnected
+[29/01/19 17:49] New client connected from port no 51118 and IP 127.0.0.1
+[29/01/19 17:49] 127.0.0.1 connected from the server
+[29/01/19 17:50] Peer 127.0.0.1 hung up
+
+[29/01/19 17:50] 127.0.0.1 disconnected from the server
+[29/01/19 17:50] Server disconnected
+[29/01/19 17:52] New client connected from port no 51134 and IP 127.0.0.1
+[29/01/19 17:52] 127.0.0.1 connected from the server
+[29/01/19 17:52] Peer 127.0.0.1 hung up
+
+[29/01/19 17:52] 127.0.0.1 disconnected from the server
+[29/01/19 17:52] Server disconnected
+[29/01/19 18:16] New client connected from port no 51158 and IP 127.0.0.1
+[29/01/19 18:16] 127.0.0.1 connected from the server
+[29/01/19 18:16] Server disconnected
+[29/01/19 18:16] Peer 127.0.0.1 hung up
+
+[29/01/19 18:16] 127.0.0.1 disconnected from the server
+[29/01/19 18:17] New client connected from port no 51170 and IP 127.0.0.1
+[29/01/19 18:17] 127.0.0.1 connected from the server
+[29/01/19 18:18] 127.0.0.1 has published rouge-de-baviere.gif /home/houssembm/Desktop/ 2000
+[29/01/19 18:18] Server disconnected
+[29/01/19 18:19] Peer 127.0.0.1 hung up
+
+[29/01/19 18:19] 127.0.0.1 disconnected from the server

@@ -23,6 +23,7 @@ typedef struct {
 	int listen_sock; // socket descriptor for listening to incoming connections
 } server_params;
 
+void publishFIle(char* filename, char* filepath);
 void *clientServerThread(void *args);
 void *guiThread(void *args);
 void on_menuitemHelp_activate();
@@ -60,16 +61,44 @@ int main(int argc, char **argv)
 		"_Choose", GTK_RESPONSE_ACCEPT, NULL);
 	gtk_builder_connect_signals(builder, NULL);
 	g_object_unref(builder);
-	gtk_widget_show_all(window);
+	gtk_widget_show(window);
+
+	server_p = (server_params*) malloc(sizeof(server_params));
 
 	// Threads
 	pthread_create(&threads[0], NULL, guiThread, NULL);
 	pthread_create(&threads[1], NULL, clientServerThread, NULL);
-	
 	pthread_join(threads[0], NULL);
 	pthread_join(threads[1], NULL);
 
+	printf("BYE\n");
+
 	return 0;
+}
+
+void publishFile(char* filename, char* filepath)
+{
+	printf("In publishFile();\n");
+	char temp[] = "pub";
+	char output[BUFFER];
+	char *message = (char*) malloc(sizeof(char) * 256);
+	printf("before send();\n");
+	send(server_p->sock, temp, sizeof(temp) ,0);
+	printf("after send();\n");
+	sprintf(message, "%s %s %d", filename, filepath, LISTENING_PORT);
+	printf("The message that will be sent to the server: %s\n", message);
+	printf("after sprintf();\n");
+	send(server_p->sock, message, strlen(message), 0);
+	printf("after send();\n");
+	int len = recv(server_p->sock, output, BUFFER, 0);
+	output[len] = '\0';
+	bzero(output, BUFFER);
+	printf("after recv();\n");
+	printf("CONFIRMATION MESSAGE: %s\n", message);
+
+	free(message);
+	free(filename);
+	free(filepath);
 }
 
 void on_menuitemHelp_activate()
@@ -85,54 +114,44 @@ void on_menuitemupload_activate()
 
 	if (result == GTK_RESPONSE_ACCEPT)
 	{
-		char *filename;
-		filename = gtk_file_chooser_get_filename(chooser);
-		printf("Filename: %s\n", filename);
-		g_free(filename);
+		char *file, *filepath, *filename;
+		file = gtk_file_chooser_get_filename(chooser);
+
+		// extraction of file path and file name
+		filename = strrchr(file, '/');
+		filename = substr(filename, 1, strlen(filename)-1);
+		filepath = substr(file, 0, strlen(file)-strlen(filename));
+		printf("filename: %s\n", filename);
+		printf("filepath: %s\n", filepath);
+		printf("before publishFile()\n");
+		// publish file
+		publishFile(filename, filepath);
+		printf("after publishFile()\n");
 	}
 
 	gtk_widget_destroy(fcdialog);
-
-	/* */
-	
-}
-
-void publishFile()
-{
-	char *temp;
-	temp="pub";
-
-	send(server_p->sock, temp, sizeof(temp) ,0); // send input to server
-
-	/*printf("Enter the file name with extension, Filepath ");
-	scanf(" %[^\t\n]s", server_p->input); //receive user input
-	sprintf(server_p->input, "%s %d", server_p->input, LISTENING_PORT);
-	send(server_p->sock, server_p->input, strlen(server_p->input) ,0); // send input to server
-	server_p->len = recv(server_p->sock, server_p->output, BUFFER, 0); // recieve confirmation message from server
-	server_p->output[server_p->len] = '\0';
-	printf("%s\n" , server_p->output); // display confirmation message
-	bzero(server_p->output, BUFFER); // pad buffer with zeros*/
 }
 
 void refreshTreeView(){}
 
 void stopServer()
 {
-	close(server_p->sock);
+	printf("stopServer()\n");
 	close(server_p->peer_sock);
 	close(server_p->listen_sock);
+	close(server_p->sock);
 }
 
 void destroy()
 {
+	printf("destroy()\n");
 	// KILL SERVER
 	stopServer();
-	pthread_kill(threads[1], SIGKILL);
+	pthread_cancel(threads[1]);
 	free(server_p);
 	// KILL GUI
 	gtk_main_quit();
-	pthread_kill(threads[0], SIGKILL);
-	exit(0);
+	pthread_cancel(threads[0]);	
 }
 
 void *clientServerThread(void *args)
@@ -187,7 +206,6 @@ void *clientServerThread(void *args)
 		perror("socket");  // error while checking the socket
 		exit(-1);  
 	} 
-
 	/* peer as server */ 
 	server.sin_family = AF_INET; // protocol family
 	server.sin_port = htons(LISTENING_PORT); // Port No and htons to convert from host to network byte order. 
@@ -200,14 +218,12 @@ void *clientServerThread(void *args)
 		perror("bind");
 		exit(-1);
 	}
-
 	/* Listen the incoming connections */
 	if((listen(server_p->listen_sock, MAX_CLIENTS)) == ERROR) // listen for max connections
 	{
 		perror("listen");
 		exit(-1);
 	}
-
 	// Using select system call to handle multiple connections
 	FD_ZERO(&master);// clear the set 
 	FD_SET(server_p->listen_sock,&master) ; //adding our descriptor to the set
@@ -334,7 +350,7 @@ void *clientServerThread(void *args)
 
 					send(server_p->sock, temp, sizeof(temp) ,0); // send input to server
 					
-					printf("Enter the file name with extension, Filepath     ");
+					printf("Enter the file name with extension, Filepath   ");
 					scanf(" %[^\t\n]s",temp_ch); //recieve user input
 					sprintf(input, "%s %d", temp_ch, LISTENING_PORT);
 					send(server_p->sock, input, strlen(input) ,0); // send input to server
@@ -466,6 +482,9 @@ void *clientServerThread(void *args)
 				case 6:
 					temp = "all";
 					send(server_p->sock, temp, sizeof(temp), 0);
+					len = recv(server_p->sock, output, BUFFER, 0);
+					output[len] = '\0';
+					printf("%s\n", output);
 					break;
         		default:    
 					printf("Invalid option\n");
@@ -475,7 +494,6 @@ void *clientServerThread(void *args)
 	}
 
 	close(server_p->listen_sock);
-	return NULL;
 }
 
 void *guiThread(void *args)

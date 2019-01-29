@@ -1,3 +1,2 @@
 
-rouge-de-baviere.gif ~/Desktop/ 1205	127.0.0.1
-	127.0.0.1
+rouge-de-baviere.gif /home/houssembm/Desktop/ 2000	127.0.0.1
