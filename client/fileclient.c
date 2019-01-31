@@ -17,51 +17,61 @@
 #define LISTENING_PORT 	2000
 #define MAX_CLIENTS    	4
 
-typedef struct {
+typedef struct server_params {
 	int sock; // sock is socket desriptor for connecting to remote server 
 	int peer_sock; // socket descriptor for peer during fetch
 	int listen_sock; // socket descriptor for listening to incoming connections
 } server_params;
 
-void publishFIle(char* filename, char* filepath);
+/*------------------*/
+/*      THREADS     */
+/*------------------*/
 void *clientServerThread(void *args);
 void *guiThread(void *args);
-void on_menuitemHelp_activate();
-void on_menuitemupload_activate();
-void refreshTreeView();
-void stopServer();
+/*------------------*/
+
+/*------------------*/
+/* SIGNALS HANDLERS */
+/*------------------*/
+void on_upload_btn_clicked(GtkButton* upload_btn, GtkFileChooserDialog* upload_dialog);
+void on_download_btn_clicked(GtkButton* download_btn, gpointer user_data);
+void on_refresh_btn_activate(GtkMenuItem *refresh_btn, GtkListBox *list_box);
+void on_about_btn_activate(GtkMenuItem *about_btn, GtkAboutDialog *about_dialog);
+void on_choose_btn_clicked(GtkButton *choose_btn, GtkFileChooserDialog *upload_dialog);
+void on_list_box_row_activated(GtkListBox *list_box, gpointer user_data);
 void destroy();
+gboolean on_server_btn_state_set(GtkSwitch *server_btn, gboolean user_data);
+/*------------------*/
+
+/*------------------*/
+/* SERVER FUNCTIONS */
+/*------------------*/
+void getAllFilesFromServer(char *output);
+void publishFile(char* filename, char* filepath);
+void downloadFile(GtkButton *downloadBtn, GtkListBoxRow *filerow);
+void stopServer();
+/*------------------*/
 
 pthread_t threads[2];
 server_params *server_p;
-GtkWidget *window, *fcdialog;
-GtkMenuItem *menuitemmenu, *menuitemfiles, *menuitemhelp;
-GtkTreeView *treeview;
-GtkStatusbar *statusbar;
 
 int main(int argc, char **argv) 
 {
 	GtkBuilder *builder;
+	GtkWidget *window;
 
 	// GTK init
 	gtk_init(&argc, &argv);
 
 	builder = gtk_builder_new();
-	gtk_builder_add_from_file(builder, "client gui.glade", NULL);
+	gtk_builder_add_from_file(builder, "client_app.glade", NULL);
 
-	window = GTK_WIDGET(gtk_builder_get_object(builder, "client_window"));
-	menuitemmenu= GTK_MENU_ITEM(gtk_builder_get_object(builder, "menuitemMenu"));	
-	menuitemfiles= GTK_MENU_ITEM(gtk_builder_get_object(builder, "menuitemFiles"));
-	menuitemhelp = GTK_MENU_ITEM(gtk_builder_get_object(builder, "menuitemHelp"));
-	treeview = GTK_TREE_VIEW(gtk_builder_get_object(builder, "treeview"));
-	statusbar = GTK_STATUSBAR(gtk_builder_get_object(builder, "statusbar"));
-	fcdialog = gtk_file_chooser_dialog_new(
-		"Choose File to Upload", window, GTK_FILE_CHOOSER_ACTION_OPEN, 
-		"_Cancel", GTK_RESPONSE_CANCEL, 
-		"_Choose", GTK_RESPONSE_ACCEPT, NULL);
+	window = GTK_WIDGET(gtk_builder_get_object(builder, "client_app"));
+
 	gtk_builder_connect_signals(builder, NULL);
 	g_object_unref(builder);
-	gtk_widget_show(window);
+
+	gtk_widget_show_all(window);
 
 	server_p = (server_params*) malloc(sizeof(server_params));
 
@@ -71,88 +81,138 @@ int main(int argc, char **argv)
 	pthread_join(threads[0], NULL);
 	pthread_join(threads[1], NULL);
 
-	printf("BYE\n");
+	free(server_p);
+	printf("\nEND OF MAIN\n");
 
 	return 0;
 }
 
+/*********************/
+/* SERVER FUNCTIONS  */
+/*********************/
+void getAllFilesFromServer(char *output)
+{
+	int len;
+
+	send(server_p->sock, "all", 4, 0);
+	printf("send not stuck\n");
+	len = recv(server_p->sock, output, BUFFER, 0);
+	printf("recv not stuck\n");
+	output[len] = '\0';
+}
 void publishFile(char* filename, char* filepath)
 {
-	printf("In publishFile();\n");
 	char temp[] = "pub";
 	char output[BUFFER];
 	char *message = (char*) malloc(sizeof(char) * 256);
-	printf("before send();\n");
+	int len;
+
 	send(server_p->sock, temp, sizeof(temp) ,0);
-	printf("after send();\n");
 	sprintf(message, "%s %s %d", filename, filepath, LISTENING_PORT);
-	printf("The message that will be sent to the server: %s\n", message);
-	printf("after sprintf();\n");
 	send(server_p->sock, message, strlen(message), 0);
-	printf("after send();\n");
-	int len = recv(server_p->sock, output, BUFFER, 0);
+	len = recv(server_p->sock, output, BUFFER, 0);
 	output[len] = '\0';
 	bzero(output, BUFFER);
-	printf("after recv();\n");
-	printf("CONFIRMATION MESSAGE: %s\n", message);
 
 	free(message);
 	free(filename);
 	free(filepath);
 }
-
-void on_menuitemHelp_activate()
+void downloadFile(GtkButton *downloadBtn, GtkListBoxRow *filerow)
 {
-	printf("Open help dialog\n");
+	printf("TODO\n");
 }
-void on_menuitemupload_activate()
-{
-	GtkFileChooser *chooser = GTK_FILE_CHOOSER(fcdialog);
-
-	gtk_file_chooser_set_do_overwrite_confirmation(chooser, TRUE);
-	gint result = gtk_dialog_run(GTK_DIALOG(fcdialog));
-
-	if (result == GTK_RESPONSE_ACCEPT)
-	{
-		char *file, *filepath, *filename;
-		file = gtk_file_chooser_get_filename(chooser);
-
-		// extraction of file path and file name
-		filename = strrchr(file, '/');
-		filename = substr(filename, 1, strlen(filename)-1);
-		filepath = substr(file, 0, strlen(file)-strlen(filename));
-		printf("filename: %s\n", filename);
-		printf("filepath: %s\n", filepath);
-		printf("before publishFile()\n");
-		// publish file
-		publishFile(filename, filepath);
-		printf("after publishFile()\n");
-	}
-
-	gtk_widget_destroy(fcdialog);
-}
-
-void refreshTreeView(){}
-
 void stopServer()
 {
-	printf("stopServer()\n");
 	close(server_p->peer_sock);
 	close(server_p->listen_sock);
 	close(server_p->sock);
 }
+/*********************/
 
-void destroy()
-{
-	printf("destroy()\n");
+/*********************/
+/* SIGNALS HANDLERS  */
+/*********************/
+void on_upload_btn_clicked(GtkButton* upload_btn, GtkFileChooserDialog* upload_dialog){
+	gtk_dialog_run(GTK_DIALOG(upload_dialog));
+}
+void on_download_btn_clicked(GtkButton* download_btn, gpointer user_data){
+	printf("TODO\n");
+}
+void on_refresh_btn_activate(GtkMenuItem *refresh_btn, GtkListBox *list_box){
+	printf("TODO\n");
+	
+	GtkWidget *label1, *label2, *hbox, *row;
+	char* files_string = (char*) malloc(sizeof(char) * BUFFER);
+	char c;
+
+	row = gtk_list_box_row_new();
+
+	hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    label1 = gtk_label_new("Hello");
+    label2 = gtk_label_new("XD");
+
+	// TODO: Extract data from server
+	getAllFilesFromServer(files_string);
+	printf("getAllFilesFromServer() not stuck\n");
+	for (int i=0; i < strlen(files_string); i++)
+	{
+		c = files_string[i];
+		printf("%c", c);
+	}
+
+    gtk_container_add(GTK_CONTAINER(row), hbox);
+    gtk_box_pack_start(GTK_BOX(hbox), label1, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), label2, TRUE, TRUE, 0);
+
+	gtk_list_box_insert(list_box, row, 0);
+
+	gtk_widget_show_all(GTK_WIDGET(list_box));
+	free(files_string);
+}
+void on_list_box_row_activated(GtkListBox *list_box, gpointer user_data){
+	GtkWidget* row = GTK_WIDGET(gtk_list_box_get_selected_row(list_box));
+	printf("TODO\n");
+}
+void on_about_btn_activate(GtkMenuItem *about_btn, GtkAboutDialog *about_dialog){
+	gtk_dialog_run(GTK_DIALOG(about_dialog));
+}
+void on_choose_btn_clicked(GtkButton *choose_btn, GtkFileChooserDialog *upload_dialog){
+	char *file, *filepath, *filename;
+
+	file = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(upload_dialog));
+	// extraction of file path and file name
+	filename = strrchr(file, '/');
+	filename = substr(filename, 1, strlen(filename)-1);
+	filepath = substr(file, 0, strlen(file)-strlen(filename));
+	// TODO: publish file
+	// publishFile(filename, filepath);
+
+	gtk_widget_hide(GTK_WIDGET(upload_dialog));
+	free (file);
+	free(filepath);
+	free(filename);
+}
+void destroy(){
 	// KILL SERVER
 	stopServer();
 	pthread_cancel(threads[1]);
-	free(server_p);
+
 	// KILL GUI
 	gtk_main_quit();
-	pthread_cancel(threads[0]);	
+	pthread_cancel(threads[0]);
+	
 }
+gboolean on_server_btn_state_set(GtkSwitch *server_btn, gboolean user_data){
+	if (user_data == FALSE){
+		printf("TODO: Server Closed\n");
+	} else {
+		printf("TODO: Server Opened\n");
+	}
+	return 0;
+}
+/*********************/
+
 
 void *clientServerThread(void *args)
 {
@@ -197,7 +257,7 @@ void *clientServerThread(void *args)
 		perror("connect");
 		exit(-1);
 	}
-	gtk_statusbar_push(statusbar, 0, "Connected to the server!");
+	printf("Connected to the server!\n");
 
 	// Setting up own port for listening incoming connections for fetch
 	// Initialising
@@ -327,7 +387,8 @@ void *clientServerThread(void *args)
 		exit(0);
 	}
 	
-	while(1)
+
+	/*while(1)
 	{
 		//DISPLAY MENU FOR USER INPUTS
 		printf("\nWELCOME. ENTER YOUR CHOICE\n");
@@ -491,7 +552,7 @@ void *clientServerThread(void *args)
 					break;
 			}
 		}
-	}
+	}*/
 
 	close(server_p->listen_sock);
 }

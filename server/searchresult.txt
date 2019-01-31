@@ -1,1 +1,1 @@
-rouge-de-baviere.gif ~/Desktop/ 1205	127.0.0.1
+client.o /home/houssem/Documents/C Projects/P2PFileSharingApp/client/ 2000	127.0.0.1

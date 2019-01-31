@@ -19,7 +19,7 @@
 #define MAX_BUFFER		512
 #define SERVER_PORT		1996
 
-typedef struct {
+typedef struct server_params{
 	int sock;
 	int new;
 	struct sockaddr_in server;
@@ -33,37 +33,46 @@ typedef struct {
 	int pid;
 } server_params;
 
+/*------------------*/
+/* SIGNALS HANDLERS */
+/*------------------*/
+gboolean on_serverStateBtn_state_set (GtkSwitch *serverStateBtn, gboolean user_data);
+void on_refreshBtn_clicked (GtkButton *refreshBtn, GtkTextBuffer *textbuffer);
+void clearBtn_clicked_cb (GtkButton *clearBtn, GtkTextBuffer *textbuffer);
+void destroy();
+/*------------------*/
+
+/*------------------*/
+/* SERVER FUNCTIONS */
+/*------------------*/
 int add_IP(char*);
 int update_IPlist(char *);
 void startServer();
 void stopServer();
+/*------------------*/
+
+/*------------------*/
+/* 	   EXTRA FN    	*/
+/*------------------*/
 void writeLog(char* ch);
+/*------------------*/
+
+/*------------------*/
+/* 		THREADS		*/
+/*------------------*/
 void *serverThread(void *args);
 void *guiThread(void *args);
-void destroy();
-void on_serverStateBtn_toggled();
-void on_refreshBtn_clicked();
+/*------------------*/
 
 time_t current_time;
 pthread_t threads[2];
 server_params* server_p;
-guint signal_id;
 GtkWidget *window;
-GtkViewport *viewport;
-GtkScrolledWindow *scrolledwindow;
-GtkVBox *vbox;
-GtkTextView *debugtv;
-GtkTextBuffer *buffer;
-GtkHButtonBox *hbuttonbox;
-GtkToggleButton *serverStateBtn;
-GtkButton *refreshBtn, *exitBtn;
-gboolean is_server_running;
 
 int main(int argc, char **argv)
 {
 	GtkBuilder *builder;
-	is_server_running = TRUE;
-	
+
 	// GTK init
 	gtk_init(&argc, &argv);
 
@@ -71,21 +80,9 @@ int main(int argc, char **argv)
 	gtk_builder_add_from_file(builder, "server gui.glade", NULL);
 
 	window = GTK_WIDGET(gtk_builder_get_object(builder, "server_window"));
-	scrolledwindow = GTK_SCROLLED_WINDOW(gtk_builder_get_object(builder, "scrolledwindow"));
-	viewport = GTK_VIEWPORT(gtk_builder_get_object(builder, "viewport"));
-	vbox = GTK_WIDGET(gtk_builder_get_object(builder, "vbox"));
-	debugtv = GTK_TEXT_VIEW(gtk_builder_get_object(builder, "debugtv"));
-	buffer = gtk_text_buffer_new(NULL);
-	gtk_text_view_set_buffer(debugtv, buffer);
-	
-	hbuttonbox = GTK_WIDGET(gtk_builder_get_object(builder, "hbuttonbox"));
-	serverStateBtn = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "serverStateBtn"));
-	refreshBtn = GTK_BUTTON(gtk_builder_get_object(builder, "refreshBtn"));
-	exitBtn = GTK_BUTTON(gtk_builder_get_object(builder, "exitBtn"));
-
 	gtk_builder_connect_signals(builder, NULL);
 	g_object_unref(builder);
-	gtk_widget_show(window);
+	gtk_widget_show_all(window);
 	
 	// server params
 	server_p = malloc(sizeof *server_p);
@@ -101,62 +98,43 @@ int main(int argc, char **argv)
 	pthread_join(threads[0], NULL);
 	pthread_join(threads[1], NULL);
 	
-	printf("BYE\n");
-
+	printf("END OF MAIN\n");
+	free(server_p);
 	return 0;
 }
 
-void destroy()
+/*********************/
+/* SERVER FUNCTIONS  */
+/*********************/
+void stopServer()
 {
-	// KILL SERVER
-	stopServer();
-	pthread_cancel(threads[1]);
-	free(server_p);
-	// KILL GUI
-	gtk_main_quit();
-	pthread_cancel(threads[0]);
+	short int true = 1;
+	setsockopt(server_p->sock,SOL_SOCKET,SO_REUSEADDR,(void*) &true,sizeof(int));
+	close(server_p->new);
+	close(server_p->sock);
 }
-void on_refreshBtn_clicked()
+void startServer()
 {
-	GtkTextIter start_iter;
-	GtkTextIter end_iter;
-	
-	FILE *logfile = fopen("log.txt", "r");
-	if (logfile != NULL){
-		gtk_text_buffer_get_start_iter(buffer, &start_iter);
-		gtk_text_buffer_get_end_iter(buffer, &end_iter);
-		gtk_text_buffer_delete(buffer, &start_iter, &end_iter);
-
-		char c;
-		char *ch = (char*) malloc(sizeof(char) * 1235000);
-		while (1)
-		{
-			c = fgetc(logfile);
-			if (feof(logfile))
-				break;
-			append(ch, c);
-		}
-		fclose(logfile);
-		gtk_text_buffer_insert(buffer, &end_iter, ch, strlen(ch));
-		free(ch);
-	}
-}
-void on_serverStateBtn_toggled()
-{
-	is_server_running = !is_server_running;
-	char msg[32];
-	
-	if (is_server_running){
-		strcpy(msg, "The server has started running!");
-		gtk_button_set_label(GTK_BUTTON(serverStateBtn), "STOP");
-	} else {
-		strcpy(msg, "The server has stopped running!");
-		gtk_button_set_label(GTK_BUTTON(serverStateBtn), "START");
-		stopServer();
+	/*get socket descriptor */
+	if ((server_p->sock= socket(AF_INET, SOCK_STREAM, 0)) == ERROR)
+	{ 
+		perror("server socket error: "); 
+		exit(1);
 	}
 
-	writeLog(msg);
-	on_refreshBtn_clicked();
+	/*binding the socket */
+	if((bind(server_p->sock, (struct sockaddr *)&(server_p->server), server_p->sockaddr_len)) == ERROR)
+	{
+		perror("bind error");
+		//exit(1);
+	}
+
+	/*listen the incoming connections */
+	if((listen(server_p->sock, MAX_CLIENTS)) == ERROR)
+	{
+		perror("listen error");
+		exit(1);
+	}
 }
 int update_IPlist(char *peer_ip)
 {
@@ -170,36 +148,67 @@ int add_IP(char *peer_ip)
 	sprintf(msg, "%s connected from the server", peer_ip);
 	writeLog(msg);
 }
-void stopServer()
-{
-	printf("stopServer()\n");
-	close(server_p->new);
-	close(server_p->sock);
-	writeLog("Server disconnected");
-}
-void startServer()
-{
-	/*get socket descriptor */
-	if ((server_p->sock= socket(AF_INET, SOCK_STREAM, 0)) == ERROR)
-	{ 
-		perror("server socket error: "); 
-		exit(-1);
-	}
-	
-	/*binding the socket */
-	if((bind(server_p->sock, (struct sockaddr *)&(server_p->server), server_p->sockaddr_len)) == ERROR)
-	{
-		perror("bind");
-		exit(-1);
-	}
+/*********************/
 
-	/*listen the incoming connections */
-	if((listen(server_p->sock, MAX_CLIENTS)) == ERROR)
-	{
-		perror("listen");
-		exit(-1);
+/*********************/
+/*  SIGNAL HANDLERS  */
+/*********************/
+gboolean on_serverStateBtn_state_set (GtkSwitch *serverStateBtn, gboolean user_data){
+	if (user_data == FALSE){
+		stopServer();
+		writeLog("The server has stopped running!");
+	} else {
+		startServer();
+		writeLog("The server has started running!");
+	}
+	return 0;
+}
+void on_refreshBtn_clicked (GtkButton *refreshBtn, GtkTextBuffer *textbuffer){
+	GtkTextIter start_iter;
+	GtkTextIter end_iter;
+	
+	FILE *logfile = fopen("log.txt", "r");
+	if (logfile != NULL){
+		gtk_text_buffer_get_start_iter(textbuffer, &start_iter);
+		gtk_text_buffer_get_end_iter(textbuffer, &end_iter);
+		gtk_text_buffer_delete(textbuffer, &start_iter, &end_iter);
+
+		gchar *cc, c;
+		while ((c = fgetc(logfile)) != EOF)
+		{
+			cc = &c;
+			gtk_text_buffer_insert(textbuffer, &end_iter, cc, 1);
+		}
+		fclose(logfile);
+	} else {
+		printf("Log file doesn't exist!\n");
 	}
 }
+void clearBtn_clicked_cb (GtkButton *clearBtn, GtkTextBuffer *textbuffer){
+	GtkTextIter start_iter;
+	GtkTextIter end_iter;
+	gtk_text_buffer_get_start_iter(textbuffer, &start_iter);
+	gtk_text_buffer_get_end_iter(textbuffer, &end_iter);
+	gtk_text_buffer_delete(textbuffer, &start_iter, &end_iter);
+	remove("log.txt");
+	FILE *logfile = fopen("log.txt", "w");
+	if (logfile != NULL)
+		fclose(logfile);
+}
+void destroy(){
+	// KILL SERVER
+	stopServer();
+	pthread_cancel(threads[1]);
+	
+	// KILL GUI
+	gtk_main_quit();
+	pthread_cancel(threads[0]);
+}
+/*********************/
+
+/*********************/
+/* 		EXTRA FN   	 */
+/*********************/
 void writeLog(char* ch)
 {
 	FILE *logfile = fopen("log.txt", "a+");
@@ -223,6 +232,11 @@ void writeLog(char* ch)
 
 	free(logmsg);
 }
+/*********************/
+
+/*********************/
+/* 		THREADS  	 */
+/*********************/
 void *serverThread(void *args)
 {
 	server_params *vargp = args;
@@ -230,12 +244,9 @@ void *serverThread(void *args)
 	startServer();
 
 	// create log file
-	FILE *logfile = fopen("log.txt", "a");
+	FILE *logfile = fopen("log.txt", "a+");
 	if (logfile != NULL)
 		fclose(logfile);
-
-	//writeLog("Server Started");
-	on_refreshBtn_clicked();
 
 	while(1)
 	{   
@@ -283,23 +294,20 @@ void *serverThread(void *args)
 				// ALL FILES
 				if(vargp->buffer[0]=='a' && vargp->buffer[1]=='l' && vargp->buffer[2]=='l')
 				{
-					printf("print all files (from server)\n");
 					char* fileinfo = "filelist.txt";
 					FILE *filedet = fopen(fileinfo, "r");
 					if (filedet != NULL)
 					{
+						printf("Files list file exists\n");
 						char fileslist[256];
 						char c;
 						while ((c = fgetc(filedet)) != EOF)
-						{
-							printf("%c", c);
 							append(fileslist, c);
-						}
-						printf("Files list (from server): %s\n", fileslist);
+
 						send(vargp->new, fileslist, sizeof(fileslist), 0);
-						printf("Files list has been sent to the client\n");
+						printf("Files list has been sent to a client\n");
 					} else {
-						printf("File doesn't exist?");
+						printf("File doesn't exist\n");
 					}
 				}
 				//PUBLISH OPERATION
@@ -317,11 +325,8 @@ void *serverThread(void *args)
         			else
 					{
 						fwrite("\n", sizeof(char), 1, filedet);
-						printf("before recv()\n");	
 						vargp->len=recv(vargp->new, vargp->file_name, MAX_BUFFER, 0);
-						printf("after recv()\n");	
 						fwrite(&vargp->file_name, vargp->len,1, filedet);
-						printf("afte fwrite\n");	
 						char Report[] = "File published"; 
 						send(vargp->new,Report,sizeof(Report),0);
 				
@@ -415,3 +420,4 @@ void *guiThread(void *args)
 {
 	gtk_main();
 }
+/*********************/
