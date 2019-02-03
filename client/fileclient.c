@@ -34,7 +34,6 @@ void *guiThread(void *args);
 /* SIGNALS HANDLERS */
 /*------------------*/
 void on_upload_btn_clicked(GtkButton* upload_btn, GtkFileChooserDialog* upload_dialog);
-void on_download_btn_clicked(GtkButton* download_btn, gpointer user_data);
 void on_refresh_btn_activate(GtkMenuItem *refresh_btn, GtkListBox *list_box);
 void on_about_btn_activate(GtkMenuItem *about_btn, GtkAboutDialog *about_dialog);
 void on_choose_btn_clicked(GtkButton *choose_btn, GtkFileChooserDialog *upload_dialog);
@@ -48,18 +47,19 @@ gboolean on_server_btn_state_set(GtkSwitch *server_btn, gboolean user_data);
 /*------------------*/
 void getAllFilesFromServer(char *output);
 void publishFile(char* filename, char* filepath);
-void downloadFile(GtkButton *downloadBtn, GtkListBoxRow *filerow);
+void downloadFile(char* file, char* peer_ip, char* peer_port);
 void stopServer();
 /*------------------*/
 
 pthread_t threads[2];
 server_params *server_p;
+gboolean server_running;
 
 int main(int argc, char **argv) 
 {
 	GtkBuilder *builder;
 	GtkWidget *window;
-
+	
 	// GTK init
 	gtk_init(&argc, &argv);
 
@@ -76,6 +76,7 @@ int main(int argc, char **argv)
 	server_p = (server_params*) malloc(sizeof(server_params));
 
 	// Threads
+	
 	pthread_create(&threads[0], NULL, guiThread, NULL);
 	pthread_create(&threads[1], NULL, clientServerThread, NULL);
 	pthread_join(threads[0], NULL);
@@ -95,9 +96,7 @@ void getAllFilesFromServer(char *output)
 	int len;
 
 	send(server_p->sock, "all", 4, 0);
-	printf("send not stuck\n");
 	len = recv(server_p->sock, output, BUFFER, 0);
-	printf("recv not stuck\n");
 	output[len] = '\0';
 }
 void publishFile(char* filename, char* filepath)
@@ -118,15 +117,80 @@ void publishFile(char* filename, char* filepath)
 	free(filename);
 	free(filepath);
 }
-void downloadFile(GtkButton *downloadBtn, GtkListBoxRow *filerow)
+void downloadFile(char* file, char* peer_ip, char* peer_port)
 {
-	printf("TODO\n");
+	char input[BUFFER];
+	struct sockaddr_in peer_connect;
+
+	//create socket to contact the desired peer
+    if ((server_p->peer_sock= socket(AF_INET, SOCK_STREAM, 0)) == ERROR){ 
+		perror("peer socket"); 
+		// error checking the socket
+		//kill(pid,SIGKILL); // on exit, the created listening process to be killed
+		exit(-1);  
+	} 
+	  
+	peer_connect.sin_family = AF_INET; // family
+	peer_connect.sin_port =htons(atoi(peer_port)); // Port No and htons to convert from host to network byte order. atoi to convert asci to integer
+	peer_connect.sin_addr.s_addr = inet_addr(peer_ip);//IP addr in ACSI form to network byte order converted using inet
+	bzero(&peer_connect.sin_zero, 8); //padding zeros
+					
+	//try to connect desired peer
+	if((connect(server_p->peer_sock, (struct sockaddr *)&peer_connect,sizeof(struct sockaddr_in)))  == ERROR) //pointer casted to sockaddr*
+	{
+		perror("connection to peer");
+		//kill(pid,SIGKILL); // on exit, the created lsitening process to be killed
+		exit(-1);
+	}
+
+	//send file keyword with path to peer
+	send(server_p->peer_sock, file, strlen(file) ,0); //send file keyword to peer	
+	printf("Recieving file from peer. Please wait \n"); // if file found on client/peer
+
+	//file recieve starts from here
+	char* recd_name = file;
+	FILE *fetch_file = fopen(recd_name, "w");
+	if(fetch_file == NULL) //error creating file 
+	{
+		printf("File %s cannot be created.\n", recd_name);
+	} else {
+		bzero(input,BUFFER);
+		int file_fetch_size=0;
+		int len_recd=0; 
+		while((file_fetch_size = recv(server_p->peer_sock, input, BUFFER, 0))>0){ // recieve file sent by peer 
+			len_recd = fwrite(input, sizeof(char),file_fetch_size,fetch_file);
+
+		    if(len_recd < file_fetch_size) //error while writing to file
+			{
+	        	perror("Error while writing file.Try again\n");
+	        	//kill(pid,SIGKILL); // on exit, the created lsitening process to be killed
+	        	exit(-1);
+	       	}
+	       	bzero(input,BUFFER);
+			
+			if(file_fetch_size == 0 || file_fetch_size != 512)  //error in recieve packet
+		    {
+		    	break;
+		    }
+		}
+
+		if(file_fetch_size < 0) //error in recieve
+		{
+			perror("Error in recieve\n");	  
+			exit(1);
+	    }
+		        			
+		fclose(fetch_file); //close opened file
+		printf("FETCH COMPLETE");
+		close(server_p->peer_sock); //close socket
+	}
 }
 void stopServer()
 {
 	close(server_p->peer_sock);
 	close(server_p->listen_sock);
 	close(server_p->sock);
+	printf("Disconnected from the server!");
 }
 /*********************/
 
@@ -136,30 +200,49 @@ void stopServer()
 void on_upload_btn_clicked(GtkButton* upload_btn, GtkFileChooserDialog* upload_dialog){
 	gtk_dialog_run(GTK_DIALOG(upload_dialog));
 }
-void on_download_btn_clicked(GtkButton* download_btn, gpointer user_data){
-	printf("TODO\n");
-}
 void on_refresh_btn_activate(GtkMenuItem *refresh_btn, GtkListBox *list_box){
-	printf("TODO\n");
-	
 	GtkWidget *label1, *label2, *hbox, *row;
 	char* files_string = (char*) malloc(sizeof(char) * BUFFER);
-	char c;
-
+	char* file_name = (char*) malloc(sizeof(char) * 32);
+	char* file_path = (char*) malloc(sizeof(char) * BUFFER);
+	char* peer_address = (char*) malloc(sizeof(char) * 22);
+	char* peer_port = (char*) malloc(sizeof(char) * 5);
+	char file_name_iter = 0, peer_address_iter = 0,
+		peer_port_iter = 0, file_path_iter = 0,
+		c, stage = 0;
+	
 	row = gtk_list_box_row_new();
-
 	hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    label1 = gtk_label_new("Hello");
-    label2 = gtk_label_new("XD");
-
-	// TODO: Extract data from server
+    
+	// Extract data from server
 	getAllFilesFromServer(files_string);
-	printf("getAllFilesFromServer() not stuck\n");
 	for (int i=0; i < strlen(files_string); i++)
 	{
 		c = files_string[i];
-		printf("%c", c);
+		if (c == '\n')
+			continue;
+		if (c == ' ' || c == '\t'){
+			stage++;
+			continue;
+		}
+		if (stage == 0)
+			file_name[file_name_iter++] = c;
+		else if (stage == 1)
+			file_path[file_path_iter++] = c;
+		else if (stage == 3)
+			peer_port[peer_port_iter++] = c;
+		else if (stage == 4)
+			peer_address[peer_address_iter++] = c;
 	}
+	file_path = strcat(file_path, "/");
+	file_path = strcat(file_path, file_name);
+
+	peer_address = strcat(peer_address, ":");
+	peer_address = strcat(peer_address, peer_port);
+	peer_address = substr(peer_address, 0, peer_address_iter+peer_port_iter+1);
+    
+	label1 = gtk_label_new(file_path);
+	label2 = gtk_label_new(peer_address);
 
     gtk_container_add(GTK_CONTAINER(row), hbox);
     gtk_box_pack_start(GTK_BOX(hbox), label1, TRUE, TRUE, 0);
@@ -169,10 +252,51 @@ void on_refresh_btn_activate(GtkMenuItem *refresh_btn, GtkListBox *list_box){
 
 	gtk_widget_show_all(GTK_WIDGET(list_box));
 	free(files_string);
+	free(file_name);
+	free(peer_address);
+	free(peer_port);
 }
 void on_list_box_row_activated(GtkListBox *list_box, gpointer user_data){
-	GtkWidget* row = GTK_WIDGET(gtk_list_box_get_selected_row(list_box));
-	printf("TODO\n");
+	GtkListBoxRow* row = GTK_LIST_BOX_ROW(gtk_list_box_get_selected_row(list_box));
+	GtkBox *hbox;
+	GList *labelList;
+	char counter = 0;
+	char *file_name = (char*) malloc(sizeof(char) * 32);
+	char *peer = (char*) malloc(sizeof(char) * 22);
+	char *ip = (char*) malloc(sizeof(char) * 16);
+	char *port = (char*) malloc(sizeof(char) * 5);
+
+	// Extraction of the file name and the peer details
+	hbox = GTK_BOX(gtk_bin_get_child(GTK_BIN(row)));
+	labelList = gtk_container_get_children(GTK_CONTAINER(hbox));
+
+	for (GList *l = labelList; l != NULL; l = l->next)
+	{
+		gpointer element_data = l->data;
+		GtkLabel *label = (GtkLabel*) element_data;
+		if (counter == 0)
+		{
+			strcpy(file_name, gtk_label_get_text(label));
+		} else {
+			strcpy(peer, gtk_label_get_text(label));
+		}
+		counter++;
+	}
+	ip = substr(peer, 0, strpos(peer, ":"));
+	port = substr(peer, strpos(peer, ":")+1, strlen(peer) - strpos(peer, ":"));
+
+	/*printf("Requested File Name: %s\n", file_name);
+	printf("Request IP: %s\n", ip);
+	printf("Request Port: %s\n", port);*/
+
+	// Begin Download Request
+	downloadFile(file_name, ip, port);
+
+	// Freeing resources
+	free(ip);
+	free(port);
+	free(file_name);
+	free(peer);
 }
 void on_about_btn_activate(GtkMenuItem *about_btn, GtkAboutDialog *about_dialog){
 	gtk_dialog_run(GTK_DIALOG(about_dialog));
@@ -213,9 +337,9 @@ gboolean on_server_btn_state_set(GtkSwitch *server_btn, gboolean user_data){
 }
 /*********************/
 
-
 void *clientServerThread(void *args)
 {
+	server_running = TRUE;
 	struct sockaddr_in remote_server; // contains IP and port no of remote server
 	char input[BUFFER];  //user input stored
 	char temp_ch[BUFFER];  //user temp stored 
@@ -255,7 +379,7 @@ void *clientServerThread(void *args)
 	if((connect(server_p->sock, (struct sockaddr *)&remote_server,sizeof(struct sockaddr_in)))  == ERROR) //pointer casted to sockaddr*
 	{
 		perror("connect");
-		exit(-1);
+		//exit(-1);
 	}
 	printf("Connected to the server!\n");
 
@@ -276,7 +400,7 @@ void *clientServerThread(void *args)
 	if((bind(server_p->listen_sock, (struct sockaddr *)&server, sockaddr_len)) == ERROR) //pointer casted to sockaddr*
 	{
 		perror("bind");
-		exit(-1);
+		//exit(-1);
 	}
 	/* Listen the incoming connections */
 	if((listen(server_p->listen_sock, MAX_CLIENTS)) == ERROR) // listen for max connections
@@ -289,7 +413,8 @@ void *clientServerThread(void *args)
 	FD_SET(server_p->listen_sock,&master) ; //adding our descriptor to the set
 	int i;
 
-	pid=fork();
+	fork();
+	pid=getpid();
 	
 	if (!pid) 
 	{ 
@@ -305,7 +430,7 @@ void *clientServerThread(void *args)
 			//handle multiple connections
 			for (i = 0; i < FD_SETSIZE; ++i)
 			{
-				if(FD_ISSET(i,&read_fd)) //returns true if i in read_fd
+				if(FD_ISSET(i,&read_fd)) //returns TRUE if i in read_fd
 				{
 					if(i==server_p->listen_sock)
 					{
@@ -314,16 +439,11 @@ void *clientServerThread(void *args)
 						{
 							perror("ACCEPT. Error accepting new connection");
 							exit(-1);
-						}
-
-						else
-						{
+						} else {
 							FD_SET (new_peer_sock, &master); // add to master set
 							printf("New peer connected from port no %d and IP %s\n", ntohs(client.sin_port),inet_ntoa(client.sin_addr));
 						}
-					}
-					else
-					{//handle data from a client
+					} else {//handle data from a client
 						bzero(input, BUFFER); 
 						if((len=recv(i,input,BUFFER,0))<=0)//connection closed by client or error
 						{
@@ -337,13 +457,10 @@ void *clientServerThread(void *args)
 							}
 							close(i);//closing this connection
 							FD_CLR(i,&master);//remove from master set
-						}
-						else
-						{
+						} else {
 							printf("%s\n", input); //file name of file requested by other client
 
 							//file read and transfer operation starts from here
-
 							char* requested_file = input; // create file handler pointer for file Read operation
 							//bzero(input, BUFFER); 
 
@@ -354,40 +471,32 @@ void *clientServerThread(void *args)
 								fprintf(stderr, "ERROR : Opening requested file.REQUESTED FILE NOT FOUND \n");
 								close(i);//closing this connection
 								FD_CLR(i,&master);//remove from master set
-							}
-							else
-							{
-							bzero(output, BUFFER); 
-							int file_request_send; //variable to store bytes recieved
-							//fseek(file_request, 0, SEEK_SET); //to set pointer to first element in file
-							while((file_request_send = fread(output, sizeof(char), BUFFER, file_request))>0) // read file and send bytes
-							{
-								
-								if((send(i, output, file_request_send, 0)) < 0) // error while transmiting file
+							} else {
+								bzero(output, BUFFER); 
+								int file_request_send; //variable to store bytes recieved
+								//fseek(file_request, 0, SEEK_SET); //to set pointer to first element in file
+								while((file_request_send = fread(output, sizeof(char), BUFFER, file_request))>0) // read file and send bytes
 								{
-									fprintf(stderr, "ERROR: Not able to send file");
-									//exit(1);
+									if((send(i, output, file_request_send, 0)) < 0) // error while transmiting file
+									{
+										fprintf(stderr, "ERROR: Not able to send file");
+										//exit(1);
+									}
+									bzero(output, BUFFER);
 								}
-
-								bzero(output, BUFFER);
-							}
-							//fclose(file_request);
-							close(i);
-							FD_CLR(i,&master);
+								//fclose(file_request);
+								close(i);
+								FD_CLR(i,&master);
 							}
 						}
 					}
 				}
-		
 			}
-
 		}
-		
 		close(server_p->listen_sock);
 		exit(0);
 	}
 	
-
 	/*while(1)
 	{
 		//DISPLAY MENU FOR USER INPUTS
@@ -556,7 +665,6 @@ void *clientServerThread(void *args)
 
 	close(server_p->listen_sock);
 }
-
 void *guiThread(void *args)
 {
 	gtk_main();

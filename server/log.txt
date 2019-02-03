@@ -1,27 +1,20 @@
-[31/01/19 19:03] New client connected from port no 47652 and IP 127.0.0.1
-[31/01/19 19:03] 127.0.0.1 connected from the server
-[31/01/19 19:04] Peer 127.0.0.1 hung up
+[03/02/19 14:37] New client connected from port no 37790 and IP 127.0.0.1
+[03/02/19 14:37] 127.0.0.1 connected from the server
+[03/02/19 14:37] Peer 127.0.0.1 hung up
 
-[31/01/19 19:04] 127.0.0.1 disconnected from the server
-[31/01/19 19:51] New client connected from port no 48192 and IP 127.0.0.1
-[31/01/19 19:51] 127.0.0.1 connected from the server
-[31/01/19 19:53] New client connected from port no 48222 and IP 127.0.0.1
-[31/01/19 19:53] 127.0.0.1 connected from the server
-[31/01/19 19:53] Peer 127.0.0.1 hung up
+[03/02/19 14:37] 127.0.0.1 disconnected from the server
+[03/02/19 14:38] New client connected from port no 37800 and IP 127.0.0.1
+[03/02/19 14:38] 127.0.0.1 connected from the server
+[03/02/19 14:38] Peer 127.0.0.1 hung up
 
-[31/01/19 19:53] 127.0.0.1 disconnected from the server
-[31/01/19 21:07] New client connected from port no 48668 and IP 127.0.0.1
-[31/01/19 21:07] 127.0.0.1 connected from the server
-[31/01/19 21:08] Peer 127.0.0.1 hung up
+[03/02/19 14:38] 127.0.0.1 disconnected from the server
+[03/02/19 14:49] New client connected from port no 37956 and IP 127.0.0.1
+[03/02/19 14:49] 127.0.0.1 connected from the server
+[03/02/19 14:50] Peer 127.0.0.1 hung up
 
-[31/01/19 21:08] 127.0.0.1 disconnected from the server
-[31/01/19 21:21] New client connected from port no 48784 and IP 127.0.0.1
-[31/01/19 21:21] 127.0.0.1 connected from the server
-[31/01/19 21:28] New client connected from port no 48842 and IP 127.0.0.1
-[31/01/19 21:28] 127.0.0.1 connected from the server
-[31/01/19 21:31] New client connected from port no 48912 and IP 127.0.0.1
-[31/01/19 21:31] 127.0.0.1 connected from the server
-[31/01/19 21:38] New client connected from port no 48986 and IP 127.0.0.1
-[31/01/19 21:38] 127.0.0.1 connected from the server
-[31/01/19 21:44] New client connected from port no 49008 and IP 127.0.0.1
-[31/01/19 21:44] 127.0.0.1 connected from the server
+[03/02/19 14:50] 127.0.0.1 disconnected from the server
+[03/02/19 14:50] New client connected from port no 37966 and IP 127.0.0.1
+[03/02/19 14:50] 127.0.0.1 connected from the server
+[03/02/19 14:50] Peer 127.0.0.1 hung up
+
+[03/02/19 14:50] 127.0.0.1 disconnected from the server

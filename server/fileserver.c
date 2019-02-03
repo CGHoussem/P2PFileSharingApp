@@ -67,11 +67,12 @@ void *guiThread(void *args);
 time_t current_time;
 pthread_t threads[2];
 server_params* server_p;
-GtkWidget *window;
+gboolean server_running;
 
 int main(int argc, char **argv)
 {
 	GtkBuilder *builder;
+	GtkWidget *window;
 
 	// GTK init
 	gtk_init(&argc, &argv);
@@ -108,6 +109,7 @@ int main(int argc, char **argv)
 /*********************/
 void stopServer()
 {
+	server_running = FALSE;
 	short int true = 1;
 	setsockopt(server_p->sock,SOL_SOCKET,SO_REUSEADDR,(void*) &true,sizeof(int));
 	close(server_p->new);
@@ -115,6 +117,7 @@ void stopServer()
 }
 void startServer()
 {
+	server_running = TRUE;
 	/*get socket descriptor */
 	if ((server_p->sock= socket(AF_INET, SOCK_STREAM, 0)) == ERROR)
 	{ 
@@ -248,14 +251,13 @@ void *serverThread(void *args)
 	if (logfile != NULL)
 		fclose(logfile);
 
-	while(1)
+	while(1 && server_running)
 	{   
 		if ((vargp->new = accept(server_p->sock, (struct sockaddr *)&vargp->client, &server_p->sockaddr_len)) == ERROR)
 		{
 			perror("ACCEPT. Error accepting new connection");
 			exit(-1);
 		}
-
 		vargp->pid=fork(); //creates separate process for each client at server
 		if (!vargp->pid)
 		{ 
@@ -268,7 +270,7 @@ void *serverThread(void *args)
 		 	vargp->peer_ip = inet_ntoa(vargp->client.sin_addr);
 	 		add_IP(vargp->peer_ip); // Adding Client IP into IP List
 		
-			while(1)
+			while(1 && server_running)
 			{
 				vargp->len=recv(vargp->new, vargp->buffer, MAX_BUFFER, 0);
 				vargp->buffer[vargp->len] = '\0';

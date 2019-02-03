@@ -137,7 +137,7 @@ Author: Ben Mabrouk Houssem, Kriaa Sana, Dorgaa Saïd, Hammar Meriem
             <property name="margin_right">1</property>
             <property name="margin_top">1</property>
             <property name="margin_bottom">1</property>
-            <property name="spacing">10</property>
+            <property name="spacing">15</property>
             <property name="layout_style">center</property>
             <child>
               <object class="GtkSwitch" id="server_btn">
@@ -150,20 +150,6 @@ Author: Ben Mabrouk Houssem, Kriaa Sana, Dorgaa Saïd, Hammar Meriem
                 <property name="expand">True</property>
                 <property name="fill">True</property>
                 <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="download_btn">
-                <property name="label" translatable="yes">Download</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <signal name="clicked" handler="on_download_btn_clicked" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
               </packing>
             </child>
             <child>
