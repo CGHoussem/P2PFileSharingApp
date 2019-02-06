@@ -42,6 +42,9 @@
                 <property name="indent">4</property>
                 <property name="buffer">textbuffer</property>
                 <property name="monospace">True</property>
+                <style>
+                  <class name="textview"/>
+                </style>
               </object>
             </child>
           </object>

@@ -10,10 +10,12 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <gtk/gtk.h>
+#include <ifaddrs.h>
 #include "../fonctions.h"
 
 #define ERROR     		-1
-#define BUFFER    		512      //this is max size of input and output buffer used to store send and recieve data
+#define BUFFER    		512
+#define MAX_BUFFER		262144
 #define LISTENING_PORT 	2000
 #define MAX_CLIENTS    	4
 
@@ -21,6 +23,7 @@ typedef struct server_params {
 	int sock; // sock is socket desriptor for connecting to remote server 
 	int peer_sock; // socket descriptor for peer during fetch
 	int listen_sock; // socket descriptor for listening to incoming connections
+	int pid; //variable to store process id of process created after fork
 } server_params;
 
 /*------------------*/
@@ -48,6 +51,7 @@ gboolean on_server_btn_state_set(GtkSwitch *server_btn, gboolean user_data);
 void getAllFilesFromServer(char *output);
 void publishFile(char* filename, char* filepath);
 void downloadFile(char* file, char* peer_ip, char* peer_port);
+void getLocalIP(char *output);
 void stopServer();
 /*------------------*/
 
@@ -55,8 +59,7 @@ pthread_t threads[2];
 server_params *server_p;
 gboolean server_running;
 
-int main(int argc, char **argv) 
-{
+int main(int argc, char **argv) {
 	GtkBuilder *builder;
 	GtkWidget *window;
 	
@@ -76,7 +79,6 @@ int main(int argc, char **argv)
 	server_p = (server_params*) malloc(sizeof(server_params));
 
 	// Threads
-	
 	pthread_create(&threads[0], NULL, guiThread, NULL);
 	pthread_create(&threads[1], NULL, clientServerThread, NULL);
 	pthread_join(threads[0], NULL);
@@ -91,34 +93,29 @@ int main(int argc, char **argv)
 /*********************/
 /* SERVER FUNCTIONS  */
 /*********************/
-void getAllFilesFromServer(char *output)
-{
+void getAllFilesFromServer(char *output){
 	int len;
 
 	send(server_p->sock, "all", 4, 0);
-	len = recv(server_p->sock, output, BUFFER, 0);
+	len = recv(server_p->sock, output, MAX_BUFFER, 0);
 	output[len] = '\0';
 }
-void publishFile(char* filename, char* filepath)
-{
-	char temp[] = "pub";
+void publishFile(char* filename, char* filepath){
 	char output[BUFFER];
 	char *message = (char*) malloc(sizeof(char) * 256);
 	int len;
 
-	send(server_p->sock, temp, sizeof(temp) ,0);
-	sprintf(message, "%s %s %d", filename, filepath, LISTENING_PORT);
+	send(server_p->sock, "pub", 4, 0);
+	
+	sprintf(message, "%s \"%s\" %d", filename, filepath, LISTENING_PORT);
 	send(server_p->sock, message, strlen(message), 0);
 	len = recv(server_p->sock, output, BUFFER, 0);
 	output[len] = '\0';
 	bzero(output, BUFFER);
 
 	free(message);
-	free(filename);
-	free(filepath);
 }
-void downloadFile(char* file, char* peer_ip, char* peer_port)
-{
+void downloadFile(char* file, char* peer_ip, char* peer_port){
 	char input[BUFFER];
 	struct sockaddr_in peer_connect;
 
@@ -126,7 +123,7 @@ void downloadFile(char* file, char* peer_ip, char* peer_port)
     if ((server_p->peer_sock= socket(AF_INET, SOCK_STREAM, 0)) == ERROR){ 
 		perror("peer socket"); 
 		// error checking the socket
-		//kill(pid,SIGKILL); // on exit, the created listening process to be killed
+		kill(server_p->pid,SIGKILL); // on exit, the created listening process to be killed
 		exit(-1);  
 	} 
 	  
@@ -139,13 +136,13 @@ void downloadFile(char* file, char* peer_ip, char* peer_port)
 	if((connect(server_p->peer_sock, (struct sockaddr *)&peer_connect,sizeof(struct sockaddr_in)))  == ERROR) //pointer casted to sockaddr*
 	{
 		perror("connection to peer");
-		//kill(pid,SIGKILL); // on exit, the created lsitening process to be killed
+		kill(server_p->pid,SIGKILL); // on exit, the created lsitening process to be killed
 		exit(-1);
 	}
 
 	//send file keyword with path to peer
 	send(server_p->peer_sock, file, strlen(file) ,0); //send file keyword to peer	
-	printf("Recieving file from peer. Please wait \n"); // if file found on client/peer
+	printf("Receiving file from peer. Please wait \n"); // if file found on client/peer
 
 	//file recieve starts from here
 	char* recd_name = file;
@@ -163,7 +160,7 @@ void downloadFile(char* file, char* peer_ip, char* peer_port)
 		    if(len_recd < file_fetch_size) //error while writing to file
 			{
 	        	perror("Error while writing file.Try again\n");
-	        	//kill(pid,SIGKILL); // on exit, the created lsitening process to be killed
+	        	kill(server_p->pid,SIGKILL); // on exit, the created lsitening process to be killed
 	        	exit(-1);
 	       	}
 	       	bzero(input,BUFFER);
@@ -181,12 +178,46 @@ void downloadFile(char* file, char* peer_ip, char* peer_port)
 	    }
 		        			
 		fclose(fetch_file); //close opened file
-		printf("FETCH COMPLETE");
+		printf("DOWNLOAD COMPLETE");
 		close(server_p->peer_sock); //close socket
 	}
 }
-void stopServer()
-{
+void getLocalIP(char *output){
+	// TODO: requirement (apt install net-tools)
+	
+	struct ifaddrs *ifaddr, *ifa;
+    int family, s;
+    char host[NI_MAXHOST];
+
+    if (getifaddrs(&ifaddr) == -1) 
+    {
+        perror("getifaddrs");
+        exit(EXIT_FAILURE);
+    }
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) 
+    {
+        if (ifa->ifa_addr == NULL)
+            continue;  
+
+        s=getnameinfo(ifa->ifa_addr,sizeof(struct sockaddr_in),host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+		// TODO: to optimize
+        if((strcmp(ifa->ifa_name,"enp2s0")==0)&&(ifa->ifa_addr->sa_family==AF_INET))
+        {
+            if (s != 0)
+            {
+                printf("getnameinfo() failed: %s\n", gai_strerror(s));
+                exit(EXIT_FAILURE);
+            }
+            printf("\tInterface : <%s>\n",ifa->ifa_name );
+            printf("\t  Address : <%s>\n", host);
+			strcpy(output, host);
+        }
+    }
+
+    freeifaddrs(ifaddr);
+}
+void stopServer(){
 	close(server_p->peer_sock);
 	close(server_p->listen_sock);
 	close(server_p->sock);
@@ -202,57 +233,77 @@ void on_upload_btn_clicked(GtkButton* upload_btn, GtkFileChooserDialog* upload_d
 }
 void on_refresh_btn_activate(GtkMenuItem *refresh_btn, GtkListBox *list_box){
 	GtkWidget *label1, *label2, *hbox, *row;
-	char* files_string = (char*) malloc(sizeof(char) * BUFFER);
+	char* files_string = (char*) malloc(sizeof(char) * MAX_BUFFER);
+	char* line = (char*) malloc(sizeof(char) * BUFFER);
 	char* file_name = (char*) malloc(sizeof(char) * 32);
 	char* file_path = (char*) malloc(sizeof(char) * BUFFER);
 	char* peer_address = (char*) malloc(sizeof(char) * 22);
 	char* peer_port = (char*) malloc(sizeof(char) * 5);
-	char file_name_iter = 0, peer_address_iter = 0,
-		peer_port_iter = 0, file_path_iter = 0,
-		c, stage = 0;
+	char c;
 	
-	row = gtk_list_box_row_new();
-	hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    
 	// Extract data from server
 	getAllFilesFromServer(files_string);
-	for (int i=0; i < strlen(files_string); i++)
-	{
-		c = files_string[i];
-		if (c == '\n')
-			continue;
-		if (c == ' ' || c == '\t'){
-			stage++;
-			continue;
+
+	// Format data to row
+	if (strlen(files_string) > 0) {
+		strcpy(line, "");
+		for (int i=0; i < strlen(files_string); i++) {
+			c = files_string[i];
+			// treat each line seperately
+			if (c == '\n') {
+				// Setup
+				{
+					row = gtk_list_box_row_new();
+					hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+				}
+				// Extractions
+				{
+					// Extract file name
+					file_name = substr(line, 0, strpos(line, " "));
+
+					// Extract file path
+					file_path = substr(line, strpos(line, "/"), strlen(line)-strpos(line,"/"));
+					char* lastocc = strrchr(line, '/');
+					file_path = substr(file_path, 0, strlen(file_path)-strlen(lastocc)+1);
+					strcut(line, strpos(line, "/"), strlen(file_path));
+
+					// Extract peer address
+					peer_address = substr(line, strpos(line, "\t")+1, strlen(line)-strpos(line, "\t"));
+					strcut(line, strpos(line, "\t"), strlen(peer_address)+1);
+
+					// Extract peer port
+					peer_port = substr(line, strpos(line, " ")+1, strlen(line)-strpos(line, " "));
+					peer_port = substr(peer_port, strpos(peer_port, " ")+1, strlen(peer_port)-strpos(peer_port, " "));
+				}
+				// Installation
+				{
+					file_path = strcat(file_path, file_name);
+					peer_address = strcat(peer_address, ":");
+					peer_address = strcat(peer_address, peer_port);
+					peer_address = substr(peer_address, 0, strlen(peer_address));
+					label1 = gtk_label_new(file_path);
+					label2 = gtk_label_new(peer_address);
+
+					gtk_container_add(GTK_CONTAINER(row), hbox);
+					gtk_box_pack_start(GTK_BOX(hbox), label1, TRUE, TRUE, 0);
+					gtk_box_pack_start(GTK_BOX(hbox), label2, TRUE, TRUE, 0);
+
+					gtk_list_box_insert(list_box, row, 0);
+					strcpy(line, "");
+				}
+				continue;
+			}
+			// append function
+			append(line, c);
 		}
-		if (stage == 0)
-			file_name[file_name_iter++] = c;
-		else if (stage == 1)
-			file_path[file_path_iter++] = c;
-		else if (stage == 3)
-			peer_port[peer_port_iter++] = c;
-		else if (stage == 4)
-			peer_address[peer_address_iter++] = c;
+
+		gtk_widget_show_all(GTK_WIDGET(list_box));
 	}
-	file_path = strcat(file_path, "/");
-	file_path = strcat(file_path, file_name);
 
-	peer_address = strcat(peer_address, ":");
-	peer_address = strcat(peer_address, peer_port);
-	peer_address = substr(peer_address, 0, peer_address_iter+peer_port_iter+1);
-    
-	label1 = gtk_label_new(file_path);
-	label2 = gtk_label_new(peer_address);
-
-    gtk_container_add(GTK_CONTAINER(row), hbox);
-    gtk_box_pack_start(GTK_BOX(hbox), label1, TRUE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(hbox), label2, TRUE, TRUE, 0);
-
-	gtk_list_box_insert(list_box, row, 0);
-
-	gtk_widget_show_all(GTK_WIDGET(list_box));
+	free(line);
 	free(files_string);
 	free(file_name);
+	free(file_path);
 	free(peer_address);
 	free(peer_port);
 }
@@ -285,10 +336,6 @@ void on_list_box_row_activated(GtkListBox *list_box, gpointer user_data){
 	ip = substr(peer, 0, strpos(peer, ":"));
 	port = substr(peer, strpos(peer, ":")+1, strlen(peer) - strpos(peer, ":"));
 
-	/*printf("Requested File Name: %s\n", file_name);
-	printf("Request IP: %s\n", ip);
-	printf("Request Port: %s\n", port);*/
-
 	// Begin Download Request
 	downloadFile(file_name, ip, port);
 
@@ -309,11 +356,13 @@ void on_choose_btn_clicked(GtkButton *choose_btn, GtkFileChooserDialog *upload_d
 	filename = strrchr(file, '/');
 	filename = substr(filename, 1, strlen(filename)-1);
 	filepath = substr(file, 0, strlen(file)-strlen(filename));
-	// TODO: publish file
-	// publishFile(filename, filepath);
+
+	// publish file
+	publishFile(filename, filepath);
 
 	gtk_widget_hide(GTK_WIDGET(upload_dialog));
-	free (file);
+
+	free(file);
 	free(filepath);
 	free(filename);
 }
@@ -337,8 +386,7 @@ gboolean on_server_btn_state_set(GtkSwitch *server_btn, gboolean user_data){
 }
 /*********************/
 
-void *clientServerThread(void *args)
-{
+void *clientServerThread(void *args){
 	server_running = TRUE;
 	struct sockaddr_in remote_server; // contains IP and port no of remote server
 	char input[BUFFER];  //user input stored
@@ -358,12 +406,11 @@ void *clientServerThread(void *args)
 	struct sockaddr_in server; //server structure when peer acting as server
 	struct sockaddr_in client; //structure for peer acting as server to bind to particular incoming peer
 	int sockaddr_len=sizeof (struct sockaddr_in);	
-	int pid;//variable to store process id of process created after fork
 
 	//variables for select system call
 	fd_set master; // this is master file desriptor
 	fd_set read_fd; // for select
-
+	//((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr
 	//for connecting with server for publishing and search files
 	if ((server_p->sock= socket(AF_INET, SOCK_STREAM, 0)) == ERROR)
 	{ 
@@ -371,9 +418,12 @@ void *clientServerThread(void *args)
 		exit(-1);  
 	}
 
+	char* my_ip = (char*) malloc(sizeof(char) * 16);
+	getLocalIP(my_ip);
+
 	remote_server.sin_family = AF_INET; // family
-	remote_server.sin_port = htons(atoi("1996")); // Port No and htons to convert from host to network byte order. atoi to convert asci to 		integer
-	remote_server.sin_addr.s_addr = inet_addr("127.0.0.1");//IP addr in ACSI form to network byte order converted using inet
+	remote_server.sin_port = htons(atoi("1996")); // Port No and htons to convert from host to network byte order. atoi to convert asci to integer
+	remote_server.sin_addr.s_addr = inet_addr(my_ip);//IP addr in ACSI form to network byte order converted using inet
 	bzero(&remote_server.sin_zero, 8); //padding zeros
 	
 	if((connect(server_p->sock, (struct sockaddr *)&remote_server,sizeof(struct sockaddr_in)))  == ERROR) //pointer casted to sockaddr*
@@ -414,9 +464,9 @@ void *clientServerThread(void *args)
 	int i;
 
 	fork();
-	pid=getpid();
+	server_p->pid = getpid();
 	
-	if (!pid) 
+	if (!server_p->pid) 
 	{ 
 		while(1)
 		{
@@ -509,7 +559,7 @@ void *clientServerThread(void *args)
 		printf("Enter your choice: ");
 		if(scanf("%d", &choice) <= 0) {
 	    	printf("Enter only an integer from 1 to 5\n");
-	    	kill(pid, SIGKILL); // on exit, the created lsitening process to be killed
+	    	kill(server_p->pid, SIGKILL); // on exit, the created lsitening process to be killed
 	    	exit(0);
 		} else {
 	   		switch(choice)
@@ -573,7 +623,7 @@ void *clientServerThread(void *args)
 					{ 
 						perror("socket"); 
 						 // error checking the socket
-						kill(pid,SIGKILL); // on exit, the created lsitening process to be killed
+						kill(server_p->pid,SIGKILL); // on exit, the created lsitening process to be killed
 						exit(-1);  
 					} 
 	  
@@ -586,7 +636,7 @@ void *clientServerThread(void *args)
 					if((connect(server_p->peer_sock, (struct sockaddr *)&peer_connect,sizeof(struct sockaddr_in)))  == ERROR) //pointer casted to sockaddr*
 					{
 						perror("connect");
-						kill(pid,SIGKILL); // on exit, the created lsitening process to be killed
+						kill(server_p->pid,SIGKILL); // on exit, the created lsitening process to be killed
 						exit(-1);
 					}
 
@@ -615,7 +665,7 @@ void *clientServerThread(void *args)
 		    				if(len_recd < file_fetch_size) //error while writing to file
 							{
 	            				perror("Error while writing file.Try again\n");
-	            				kill(pid,SIGKILL); // on exit, the created lsitening process to be killed
+	            				kill(server_p->pid,SIGKILL); // on exit, the created lsitening process to be killed
 	                 			exit(-1);
 	       				 	}
 	       				 	bzero(input,BUFFER);
@@ -646,7 +696,7 @@ void *clientServerThread(void *args)
 					break;
 
        			case 5:    
-        			kill(pid,SIGKILL); // on exit, the created lsitening process to be killed
+        			kill(server_p->pid,SIGKILL); // on exit, the created lsitening process to be killed
         			close(server_p->sock);
       	 			return NULL;
 				case 6:
@@ -665,7 +715,6 @@ void *clientServerThread(void *args)
 
 	close(server_p->listen_sock);
 }
-void *guiThread(void *args)
-{
+void *guiThread(void *args){
 	gtk_main();
 }

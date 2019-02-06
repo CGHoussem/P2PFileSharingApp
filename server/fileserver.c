@@ -72,8 +72,9 @@ gboolean server_running;
 int main(int argc, char **argv)
 {
 	GtkBuilder *builder;
-	GtkWidget *window;
-
+	GtkWidget *window, *debugtv;
+	
+	GtkStyleContext *context;
 	// GTK init
 	gtk_init(&argc, &argv);
 
@@ -81,6 +82,19 @@ int main(int argc, char **argv)
 	gtk_builder_add_from_file(builder, "server gui.glade", NULL);
 
 	window = GTK_WIDGET(gtk_builder_get_object(builder, "server_window"));
+	debugtv = GTK_WIDGET(gtk_builder_get_object(builder, "debugtv"));
+	
+	GtkCssProvider *css_prov = gtk_css_provider_new();
+	gtk_css_provider_load_from_path(css_prov, "design.css", NULL);
+
+	context = gtk_widget_get_style_context(debugtv);
+
+	gtk_style_context_add_provider(context, 
+		GTK_STYLE_PROVIDER(css_prov),
+		GTK_STYLE_PROVIDER_PRIORITY_USER);
+	
+	gtk_style_context_save(context);
+
 	gtk_builder_connect_signals(builder, NULL);
 	g_object_unref(builder);
 	gtk_widget_show_all(window);
@@ -270,11 +284,13 @@ void *serverThread(void *args)
 		 	vargp->peer_ip = inet_ntoa(vargp->client.sin_addr);
 	 		add_IP(vargp->peer_ip); // Adding Client IP into IP List
 		
-			while(1 && server_running)
+			while(1)
 			{
 				vargp->len=recv(vargp->new, vargp->buffer, MAX_BUFFER, 0);
 				vargp->buffer[vargp->len] = '\0';
-				printf("%s\n",vargp->buffer);
+				printf("%s request has been called!\n",vargp->buffer);
+				sprintf(msg, "Peer [%s] called [%s] request", inet_ntoa(vargp->client.sin_addr), vargp->buffer);
+				writeLog(msg);
 	
 				// Connection error checking
 				if(vargp->len<=0) // Connection closed by client or error
@@ -300,12 +316,10 @@ void *serverThread(void *args)
 					FILE *filedet = fopen(fileinfo, "r");
 					if (filedet != NULL)
 					{
-						printf("Files list file exists\n");
 						char fileslist[256];
 						char c;
-						while ((c = fgetc(filedet)) != EOF)
+						while ((c= fgetc(filedet)) != EOF)
 							append(fileslist, c);
-
 						send(vargp->new, fileslist, sizeof(fileslist), 0);
 						printf("Files list has been sent to a client\n");
 					} else {
@@ -326,7 +340,6 @@ void *serverThread(void *args)
         			}   	
         			else
 					{
-						fwrite("\n", sizeof(char), 1, filedet);
 						vargp->len=recv(vargp->new, vargp->file_name, MAX_BUFFER, 0);
 						fwrite(&vargp->file_name, vargp->len,1, filedet);
 						char Report[] = "File published"; 
@@ -336,9 +349,10 @@ void *serverThread(void *args)
 						vargp->peer_ip = inet_ntoa(vargp->client.sin_addr);
 						// Adding peer IP address to given file
 						fwrite(vargp->peer_ip,1, strlen(vargp->peer_ip), filedet);
+						fwrite("\n", sizeof(char), 1, filedet);
 						fclose(filedet);
 
-						sprintf(msg, "%s has published %s", vargp->peer_ip, vargp->file_name);
+						sprintf(msg, "Peer [%s] published [%s]", vargp->peer_ip, vargp->file_name);
 						writeLog(msg);
 
 						printf("%s\n","FILE PUBLISHED");

@@ -25,3 +25,14 @@ int strpos(char *haystack, char *needle)
       return p - haystack;
    return -1;
 }
+
+int strcut(char *str, int begin, int len)
+{
+    int l = strlen(str);
+
+    if (len < 0) len = l - begin;
+    if (begin + len > l) len = l - begin;
+    memmove(str + begin, str + begin + len, l - len + 1);
+
+    return len;
+}

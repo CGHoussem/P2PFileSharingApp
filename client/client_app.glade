@@ -29,7 +29,7 @@ Author: Ben Mabrouk Houssem, Kriaa Sana, Dorgaa Saïd, Hammar Meriem
   <!-- interface-authors Ben Mabrouk Houssem, Kriaa Sana, Dorgaa Sa\303\257d, Hammar Meriem -->
   <object class="GtkApplicationWindow" id="client_app">
     <property name="can_focus">False</property>
-    <property name="resizable">False</property>
+    <property name="resizable">True</property>
     <property name="window_position">center</property>
     <property name="default_width">640</property>
     <property name="default_height">480</property>

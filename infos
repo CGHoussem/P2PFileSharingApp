@@ -1,0 +1,7 @@
+TODO LIST:
+
+==] Fix publish file request / function (S) (FIXED)
+------> File gets published + Client crash (malloc_consilidate(): invalid chunk size) / (Aborted (core dumped))
+==] Fix download file request / function (S/C) (NOT FIXED) (TESTING WITH ANOTHER PEER NEEDED)
+------> send request argument is empty + Crash (connection to peer: Connection refused)
+==] Fix extracting the file path from fileslist.txt (FIXED)
