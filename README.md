@@ -14,7 +14,7 @@ Just run the command below in the project folder:
 ```bash 
 cd server
 make
-./server.out
+./server.o
 ```
 
 ## Compilation & Execution of the Client
@@ -22,5 +22,5 @@ Just run the command below in the project folder:
 ```bash 
 cd client
 make
-./client.out
+./client.o
 ```
