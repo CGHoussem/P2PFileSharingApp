@@ -429,7 +429,7 @@ void *clientServerThread(void *args){
 	if((connect(server_p->sock, (struct sockaddr *)&remote_server,sizeof(struct sockaddr_in)))  == ERROR) //pointer casted to sockaddr*
 	{
 		perror("connect");
-		//exit(-1);
+		exit(-1);
 	}
 	printf("Connected to the server!\n");
 
@@ -450,7 +450,7 @@ void *clientServerThread(void *args){
 	if((bind(server_p->listen_sock, (struct sockaddr *)&server, sockaddr_len)) == ERROR) //pointer casted to sockaddr*
 	{
 		perror("bind");
-		//exit(-1);
+		exit(-1);
 	}
 	/* Listen the incoming connections */
 	if((listen(server_p->listen_sock, MAX_CLIENTS)) == ERROR) // listen for max connections

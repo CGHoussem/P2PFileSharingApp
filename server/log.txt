@@ -1,210 +1,24 @@
-[05/02/19 14:09] New client connected from port no 52324 and IP 192.168.1.12
-[05/02/19 14:09] 192.168.1.12 connected from the server
-[05/02/19 14:09] Peer [192.168.1.12] called [all] request
-[05/02/19 14:09] Peer [192.168.1.12] called [] request
-[05/02/19 14:09] Peer 192.168.1.12 hung up
+[06/02/19 12:40] The server has stopped running!
+[06/02/19 12:40] The server has started running!
+[06/02/19 12:40] New client connected from port no 44884 and IP 127.0.0.1
+[06/02/19 12:40] 127.0.0.1 connected from the server
+[06/02/19 12:40] Peer [127.0.0.1] called [all] request
+[06/02/19 12:42] Peer [127.0.0.1] called [] request
+[06/02/19 12:42] Peer 127.0.0.1 hung up
 
-[05/02/19 14:09] 192.168.1.12 disconnected from the server
-[05/02/19 14:09] New client connected from port no 52332 and IP 192.168.1.12
-[05/02/19 14:09] 192.168.1.12 connected from the server
-[05/02/19 14:09] Peer [192.168.1.12] called [all] request
-[05/02/19 14:10] Peer [192.168.1.12] called [] request
-[05/02/19 14:10] Peer 192.168.1.12 hung up
+[06/02/19 12:42] 127.0.0.1 disconnected from the server
+[06/02/19 12:48] Server IP Address: [0.0.0.0]
 
-[05/02/19 14:10] 192.168.1.12 disconnected from the server
-[05/02/19 14:10] New client connected from port no 52342 and IP 192.168.1.12
-[05/02/19 14:10] 192.168.1.12 connected from the server
-[05/02/19 14:10] Peer [192.168.1.12] called [all] request
-[05/02/19 14:10] Peer [192.168.1.12] called [] request
-[05/02/19 14:10] Peer 192.168.1.12 hung up
+[14/02/19 23:13] Server IP Address: [0.0.0.0]
 
-[05/02/19 14:10] 192.168.1.12 disconnected from the server
-[05/02/19 14:11] New client connected from port no 52356 and IP 192.168.1.12
-[05/02/19 14:11] 192.168.1.12 connected from the server
-[05/02/19 14:11] Peer [192.168.1.12] called [all] request
-[05/02/19 14:11] Peer [192.168.1.12] called [] request
-[05/02/19 14:11] Peer 192.168.1.12 hung up
+[14/02/19 23:14] New client connected from port no 51994 and IP 127.0.0.1
+[14/02/19 23:14] 127.0.0.1 connected from the server
+[14/02/19 23:14] Peer [127.0.0.1] called [all] request
+[14/02/19 23:14] Peer [127.0.0.1] called [pub] request
+[14/02/19 23:14] New client connected from port no 52010 and IP 127.0.0.1
+[14/02/19 23:14] 127.0.0.1 connected from the server
+[14/02/19 23:14] Peer [127.0.0.1] called [all] request
+[14/02/19 23:19] Peer [127.0.0.1] called [] request
+[14/02/19 23:19] Peer 127.0.0.1 hung up
 
-[05/02/19 14:11] 192.168.1.12 disconnected from the server
-[05/02/19 14:14] New client connected from port no 52406 and IP 192.168.1.12
-[05/02/19 14:14] 192.168.1.12 connected from the server
-[05/02/19 14:14] Peer [192.168.1.12] called [all] request
-[05/02/19 14:16] Peer [192.168.1.12] called [] request
-[05/02/19 14:16] Peer 192.168.1.12 hung up
-
-[05/02/19 14:16] 192.168.1.12 disconnected from the server
-[05/02/19 14:16] New client connected from port no 52442 and IP 192.168.1.12
-[05/02/19 14:16] 192.168.1.12 connected from the server
-[05/02/19 14:16] Peer [192.168.1.12] called [all] request
-[05/02/19 14:16] Peer [192.168.1.12] called [] request
-[05/02/19 14:16] Peer 192.168.1.12 hung up
-
-[05/02/19 14:16] 192.168.1.12 disconnected from the server
-[05/02/19 14:16] New client connected from port no 52448 and IP 192.168.1.12
-[05/02/19 14:16] 192.168.1.12 connected from the server
-[05/02/19 14:16] Peer [192.168.1.12] called [all] request
-[05/02/19 14:16] Peer [192.168.1.12] called [] request
-[05/02/19 14:16] Peer 192.168.1.12 hung up
-
-[05/02/19 14:16] 192.168.1.12 disconnected from the server
-[05/02/19 14:18] New client connected from port no 52470 and IP 192.168.1.12
-[05/02/19 14:18] 192.168.1.12 connected from the server
-[05/02/19 14:18] Peer [192.168.1.12] called [all] request
-[05/02/19 14:18] Peer [192.168.1.12] called [] request
-[05/02/19 14:18] Peer 192.168.1.12 hung up
-
-[05/02/19 14:18] 192.168.1.12 disconnected from the server
-[06/02/19 11:26] New client connected from port no 44224 and IP 192.168.1.12
-[06/02/19 11:26] 192.168.1.12 connected from the server
-[06/02/19 11:26] Peer [192.168.1.12] called [all] request
-[06/02/19 11:26] Peer [192.168.1.12] called [] request
-[06/02/19 11:26] Peer 192.168.1.12 hung up
-
-[06/02/19 11:26] 192.168.1.12 disconnected from the server
-[06/02/19 11:27] New client connected from port no 44234 and IP 192.168.1.12
-[06/02/19 11:27] 192.168.1.12 connected from the server
-[06/02/19 11:27] Peer [192.168.1.12] called [all] request
-[06/02/19 11:27] Peer [192.168.1.12] called [] request
-[06/02/19 11:27] Peer 192.168.1.12 hung up
-
-[06/02/19 11:27] 192.168.1.12 disconnected from the server
-[06/02/19 11:27] New client connected from port no 44240 and IP 192.168.1.12
-[06/02/19 11:27] 192.168.1.12 connected from the server
-[06/02/19 11:27] Peer [192.168.1.12] called [all] request
-[06/02/19 11:27] Peer [192.168.1.12] called [] request
-[06/02/19 11:27] Peer 192.168.1.12 hung up
-
-[06/02/19 11:27] 192.168.1.12 disconnected from the server
-[06/02/19 11:28] New client connected from port no 44248 and IP 192.168.1.12
-[06/02/19 11:28] 192.168.1.12 connected from the server
-[06/02/19 11:28] Peer [192.168.1.12] called [all] request
-[06/02/19 11:28] Peer [192.168.1.12] called [] request
-[06/02/19 11:28] Peer 192.168.1.12 hung up
-
-[06/02/19 11:28] 192.168.1.12 disconnected from the server
-[06/02/19 11:28] New client connected from port no 44254 and IP 192.168.1.12
-[06/02/19 11:28] 192.168.1.12 connected from the server
-[06/02/19 11:28] Peer [192.168.1.12] called [all] request
-[06/02/19 11:28] Peer [192.168.1.12] called [] request
-[06/02/19 11:28] Peer 192.168.1.12 hung up
-
-[06/02/19 11:28] 192.168.1.12 disconnected from the server
-[06/02/19 11:29] New client connected from port no 44258 and IP 192.168.1.12
-[06/02/19 11:29] 192.168.1.12 connected from the server
-[06/02/19 11:29] Peer [192.168.1.12] called [all] request
-[06/02/19 11:29] Peer [192.168.1.12] called [] request
-[06/02/19 11:29] Peer 192.168.1.12 hung up
-
-[06/02/19 11:29] 192.168.1.12 disconnected from the server
-[06/02/19 11:29] New client connected from port no 44260 and IP 192.168.1.12
-[06/02/19 11:29] 192.168.1.12 connected from the server
-[06/02/19 11:29] Peer [192.168.1.12] called [all] request
-[06/02/19 11:29] Peer [192.168.1.12] called [] request
-[06/02/19 11:29] Peer 192.168.1.12 hung up
-
-[06/02/19 11:29] 192.168.1.12 disconnected from the server
-[06/02/19 11:30] New client connected from port no 44278 and IP 192.168.1.12
-[06/02/19 11:30] 192.168.1.12 connected from the server
-[06/02/19 11:30] Peer [192.168.1.12] called [all] request
-[06/02/19 11:30] Peer [192.168.1.12] called [] request
-[06/02/19 11:30] Peer 192.168.1.12 hung up
-
-[06/02/19 11:30] 192.168.1.12 disconnected from the server
-[06/02/19 11:30] New client connected from port no 44280 and IP 192.168.1.12
-[06/02/19 11:30] 192.168.1.12 connected from the server
-[06/02/19 11:30] Peer [192.168.1.12] called [all] request
-[06/02/19 11:30] Peer [192.168.1.12] called [] request
-[06/02/19 11:30] Peer 192.168.1.12 hung up
-
-[06/02/19 11:30] 192.168.1.12 disconnected from the server
-[06/02/19 11:30] New client connected from port no 44284 and IP 192.168.1.12
-[06/02/19 11:30] 192.168.1.12 connected from the server
-[06/02/19 11:30] Peer [192.168.1.12] called [all] request
-[06/02/19 11:30] Peer [192.168.1.12] called [] request
-[06/02/19 11:30] Peer 192.168.1.12 hung up
-
-[06/02/19 11:30] 192.168.1.12 disconnected from the server
-[06/02/19 11:30] New client connected from port no 44288 and IP 192.168.1.12
-[06/02/19 11:30] 192.168.1.12 connected from the server
-[06/02/19 11:30] Peer [192.168.1.12] called [all] request
-[06/02/19 11:32] Peer [192.168.1.12] called [] request
-[06/02/19 11:32] Peer 192.168.1.12 hung up
-
-[06/02/19 11:32] 192.168.1.12 disconnected from the server
-[06/02/19 11:32] New client connected from port no 44304 and IP 192.168.1.12
-[06/02/19 11:32] 192.168.1.12 connected from the server
-[06/02/19 11:32] Peer [192.168.1.12] called [all] request
-[06/02/19 11:33] Peer [192.168.1.12] called [] request
-[06/02/19 11:33] Peer 192.168.1.12 hung up
-
-[06/02/19 11:33] 192.168.1.12 disconnected from the server
-[06/02/19 11:33] New client connected from port no 44314 and IP 192.168.1.12
-[06/02/19 11:33] 192.168.1.12 connected from the server
-[06/02/19 11:33] Peer [192.168.1.12] called [all] request
-[06/02/19 11:33] Peer [192.168.1.12] called [] request
-[06/02/19 11:33] Peer 192.168.1.12 hung up
-
-[06/02/19 11:33] 192.168.1.12 disconnected from the server
-[06/02/19 11:35] New client connected from port no 44338 and IP 192.168.1.12
-[06/02/19 11:35] 192.168.1.12 connected from the server
-[06/02/19 11:35] Peer [192.168.1.12] called [all] request
-[06/02/19 11:35] Peer [192.168.1.12] called [] request
-[06/02/19 11:35] Peer 192.168.1.12 hung up
-
-[06/02/19 11:35] 192.168.1.12 disconnected from the server
-[06/02/19 11:36] New client connected from port no 44368 and IP 192.168.1.12
-[06/02/19 11:36] 192.168.1.12 connected from the server
-[06/02/19 11:37] Peer [192.168.1.12] called [all] request
-[06/02/19 11:37] Peer [192.168.1.12] called [] request
-[06/02/19 11:37] Peer 192.168.1.12 hung up
-
-[06/02/19 11:37] 192.168.1.12 disconnected from the server
-[06/02/19 11:40] New client connected from port no 44408 and IP 192.168.1.12
-[06/02/19 11:40] 192.168.1.12 connected from the server
-[06/02/19 11:40] Peer [192.168.1.12] called [all] request
-[06/02/19 11:40] Peer [192.168.1.12] called [] request
-[06/02/19 11:40] Peer 192.168.1.12 hung up
-
-[06/02/19 11:40] 192.168.1.12 disconnected from the server
-[06/02/19 11:42] New client connected from port no 44432 and IP 192.168.1.12
-[06/02/19 11:42] 192.168.1.12 connected from the server
-[06/02/19 11:42] Peer [192.168.1.12] called [all] request
-[06/02/19 11:42] Peer [192.168.1.12] called [] request
-[06/02/19 11:42] Peer 192.168.1.12 hung up
-
-[06/02/19 11:42] 192.168.1.12 disconnected from the server
-[06/02/19 11:42] New client connected from port no 44442 and IP 192.168.1.12
-[06/02/19 11:42] 192.168.1.12 connected from the server
-[06/02/19 11:43] Peer [192.168.1.12] called [all] request
-[06/02/19 11:43] Peer [192.168.1.12] called [] request
-[06/02/19 11:43] Peer 192.168.1.12 hung up
-
-[06/02/19 11:43] 192.168.1.12 disconnected from the server
-[06/02/19 11:43] New client connected from port no 44452 and IP 192.168.1.12
-[06/02/19 11:43] 192.168.1.12 connected from the server
-[06/02/19 11:43] Peer [192.168.1.12] called [all] request
-[06/02/19 11:43] Peer [192.168.1.12] called [] request
-[06/02/19 11:43] Peer 192.168.1.12 hung up
-
-[06/02/19 11:43] 192.168.1.12 disconnected from the server
-[06/02/19 11:45] New client connected from port no 44488 and IP 192.168.1.12
-[06/02/19 11:45] 192.168.1.12 connected from the server
-[06/02/19 11:45] Peer [192.168.1.12] called [all] request
-[06/02/19 11:45] Peer [192.168.1.12] called [] request
-[06/02/19 11:45] Peer 192.168.1.12 hung up
-
-[06/02/19 11:45] 192.168.1.12 disconnected from the server
-[06/02/19 11:59] New client connected from port no 44518 and IP 192.168.1.12
-[06/02/19 11:59] 192.168.1.12 connected from the server
-[06/02/19 11:59] Peer [192.168.1.12] called [all] request
-[06/02/19 11:59] Peer [192.168.1.12] called [] request
-[06/02/19 11:59] Peer 192.168.1.12 hung up
-
-[06/02/19 11:59] 192.168.1.12 disconnected from the server
-[06/02/19 12:02] New client connected from port no 44584 and IP 192.168.1.12
-[06/02/19 12:02] 192.168.1.12 connected from the server
-[06/02/19 12:02] Peer [192.168.1.12] called [all] request
-[06/02/19 12:02] Peer [192.168.1.12] called [] request
-[06/02/19 12:02] Peer 192.168.1.12 hung up
-
-[06/02/19 12:02] 192.168.1.12 disconnected from the server
+[14/02/19 23:19] 127.0.0.1 disconnected from the server

@@ -1,1 +1,2 @@
 test.c "/home/houssem/Documents/C Projects/P2PFileSharingApp/client/" 2000	192.168.1.12
+client_app.glade "/home/houssem/Documents/C Projects/P2PFileSharingApp/client/" 2000	127.0.0.1

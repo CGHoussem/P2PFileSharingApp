@@ -105,6 +105,7 @@ int main(int argc, char **argv)
 	server_p->server.sin_family = AF_INET;
 	server_p->server.sin_port = htons(SERVER_PORT);
 	server_p->server.sin_addr.s_addr = INADDR_ANY;
+	INADDR
 	bzero(&(server_p->server.sin_zero), 8);
 
 	// Threads
@@ -143,7 +144,7 @@ void startServer()
 	if((bind(server_p->sock, (struct sockaddr *)&(server_p->server), server_p->sockaddr_len)) == ERROR)
 	{
 		perror("bind error");
-		//exit(1);
+		exit(1);
 	}
 
 	/*listen the incoming connections */
