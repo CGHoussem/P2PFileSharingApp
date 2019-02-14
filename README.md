@@ -22,5 +22,5 @@ Just run the command below in the project folder:
 ```bash 
 cd client
 make
-./server.out
+./client.out
 ```
